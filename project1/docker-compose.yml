@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  # API end point setup
+  nodeapp:
+    build:
+      context: ./api1
+    volumes:
+      - ./backend:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.node-server.rule=Host(`localhost`) && PathPrefix(`/app`)"
+      - "traefik.http.routers.node-server.service=node-service"
+      - "traefik.http.routers.node-server.middlewares=stripprefix"
+      - "traefik.http.services.node-service.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.stripprefix.stripprefix.prefixes=/app"
+    depends_on:
+      - traefik
+
+  # Traefik reverse proxy setup
+  traefik:
+    image: traefik:v2.9
+    command: --api.insecure=true --providers.docker
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
